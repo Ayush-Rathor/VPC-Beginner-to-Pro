@@ -1,0 +1,112 @@
+🚀 Launching a Simple VPC Using AWS CLI
+
+---
+
+ 🔧 Preparing Your Environment  
+
+# Step 1: Install and Configure AWS CLI  
+1. 📥 Install AWS CLI:  
+   - Download and install the CLI from the official AWS documentation.  
+2. ⚙️ Configure AWS CLI:  
+   - Run `aws configure`.  
+   - Set:  
+     - Access Key ID and Secret Access Key (from AWS IAM).  
+     - Default Region: Choose your working Region (e.g., `us-east-2`).  
+     - Default Output Format: JSON is recommended.  
+
+💡 Pro Tip: Use `--region` in commands to override the default Region temporarily if needed.  
+
+---
+
+ 🛠️ Building the VPC Step-by-Step  
+
+# Step 1: Create a VPC  
+1. Run the following command to create the VPC:  
+   ```bash
+   aws ec2 create-vpc --cidr-block 10.0.0.0/22 --tag-specifications 'ResourceType=vpc,Tags=[{Key=Name,Value=DemoVPC2}]' --region us-east-2
+   ```  
+2. Explanation:  
+   - `--cidr-block`: Defines the IP range for the VPC (`10.0.0.0/22` = 1,024 IPs).  
+   - `--tag-specifications`: Adds a friendly name tag to the VPC (`Name=DemoVPC2`).  
+3. Copy the `VpcId` from the JSON output for later use.  
+
+---
+
+# Step 2: Verify VPC Creation  
+1. Confirm that the VPC is active:  
+   ```bash
+   aws ec2 describe-vpcs --vpc-ids <YourVpcId> --region us-east-2
+   ```  
+   - Check the `"State"` field; it should be `"available"`.  
+
+---
+
+# Step 3: Create an Internet Gateway (IGW)  
+1. Create the IGW:  
+   ```bash
+   aws ec2 create-internet-gateway --tag-specifications 'ResourceType=internet-gateway,Tags=[{Key=Name,Value=DemoIGW2}]' --region us-east-2
+   ```  
+2. Copy the `InternetGatewayId` from the JSON output.  
+3. Attach the IGW to the VPC:  
+   ```bash
+   aws ec2 attach-internet-gateway --internet-gateway-id <YourInternetGatewayId> --vpc-id <YourVpcId> --region us-east-2
+   ```  
+
+---
+
+# Step 4: Create a Subnet  
+1. Create a subnet within the VPC:  
+   ```bash
+   aws ec2 create-subnet --vpc-id <YourVpcId> --cidr-block 10.0.0.0/25 --tag-specifications 'ResourceType=subnet,Tags=[{Key=Name,Value=PublicSubnet2}]' --region us-east-2
+   ```  
+2. Explanation:  
+   - `--cidr-block`: Creates a subnet with 128 IPs (`/25`).  
+   - `--tag-specifications`: Tags the subnet (`Name=PublicSubnet2`).  
+3. Copy the `SubnetId` from the JSON output.  
+
+---
+
+# Step 5: Create a Route Table  
+1. Create the route table:  
+   ```bash
+   aws ec2 create-route-table --vpc-id <YourVpcId> --tag-specifications 'ResourceType=route-table,Tags=[{Key=Name,Value=DemoPublicRouteTable}]' --region us-east-2
+   ```  
+2. Copy the `RouteTableId` from the JSON output.  
+
+---
+
+# Step 6: Add a Route to the Internet Gateway  
+1. Add a route for internet traffic:  
+   ```bash
+   aws ec2 create-route --route-table-id <YourRouteTableId> --destination-cidr-block 0.0.0.0/0 --gateway-id <YourInternetGatewayId> --region us-east-2
+   ```  
+2. Explanation:  
+   - `--destination-cidr-block`: Routes all internet traffic (`0.0.0.0/0`).  
+   - `--gateway-id`: Specifies the IGW as the destination.  
+
+---
+
+# Step 7: Associate the Route Table with the Subnet  
+1. Make the subnet public:  
+   ```bash
+   aws ec2 associate-route-table --route-table-id <YourRouteTableId> --subnet-id <YourSubnetId> --region us-east-2
+   ```  
+
+---
+
+ 🔍 Verifying the Setup  
+
+1. Check VPC Details:  
+   ```bash
+   aws ec2 describe-vpcs --vpc-ids <YourVpcId> --region us-east-2
+   ```  
+2. Verify Subnet and Route Table:  
+   ```bash
+   aws ec2 describe-subnets --subnet-ids <YourSubnetId> --region us-east-2
+   aws ec2 describe-route-tables --route-table-ids <YourRouteTableId> --region us-east-2
+   ```  
+3. Confirm that the route table has the `0.0.0.0/0` route and is associated with the subnet.  
+
+---
+
+By following these steps, you’ve successfully created a simple VPC, complete with internet connectivity and a public subnet. 🎉
